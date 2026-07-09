@@ -70,7 +70,7 @@ function App() {
 
     setLoading(true);
     try {
-      const response = await fetch("https://crave-collage-unlovable.ngrok-free.dev/hitung-biaya", {
+      const response = await fetch("https://celebes-ticket-production.up.railway.app/hitung-biaya", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
