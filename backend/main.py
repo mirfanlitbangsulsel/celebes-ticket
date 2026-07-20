@@ -1,52 +1,59 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, date
 from pydantic import BaseModel
+import math
 
-app = FastAPI(title="API CelebesTicket")
+app = FastAPI()
 
-# Tambahkan blok ini untuk mengizinkan React menghubungi Python
+# Konfigurasi CORS agar bisa diakses dari Frontend Netlify Anda
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Mengizinkan semua akses
-    allow_credentials=True,
+    allow_origins=["*"], # Ganti dengan URL Netlify Anda di masa depan untuk keamanan
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- (Kode model PesananBaru, HARGA_TIKET, dan fungsi lainnya biarkan tetap sama persis seperti sebelumnya di bawah sini) ---
+class TicketRequest(BaseModel):
+    tanggal: str
+    asal_kab: str
+    tujuan_kab: str
 
-# Model Data yang diharapkan dari Frontend (React)
-class PesananBaru(BaseModel):
-    stasiun_berangkat: str
-    stasiun_tiba: str
-    jumlah_tiket: int
-    nama_penumpang: str
-    metode_pengiriman: str
-
-# Harga Default
-HARGA_TIKET = 10000
-JASA_TRAVEL = 2500
-
-@app.get("/")
-def baca_root():
-    return {"pesan": "Selamat datang di API CelebesTicket Server!"}
+def hitung_harga_dasar(asal_kab, tujuan_kab):
+    # Logika harga 5000 untuk kabupaten bersebelahan
+    # Pasangan: Maros-Pangkep atau Pangkep-Barru
+    bersebelahan = [
+        ("Maros", "Pangkep"), ("Pangkep", "Maros"),
+        ("Pangkep", "Barru"), ("Barru", "Pangkep")
+    ]
+    
+    if (asal_kab, tujuan_kab) in bersebelahan:
+        return 5000
+    return 10000 # Harga default untuk rute lainnya
 
 @app.post("/hitung-biaya")
-def hitung_biaya(pesanan: PesananBaru):
-    total_tiket = pesanan.jumlah_tiket * HARGA_TIKET
-    total_jasa = pesanan.jumlah_tiket * JASA_TRAVEL
+def hitung_biaya(data: TicketRequest):
+    # 1. Validasi Tanggal (Minimal 2 hari sebelum keberangkatan)
+    try:
+        tgl_pesan = datetime.strptime(data.tanggal, '%Y-%m-%d').date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Format tanggal salah.")
+        
+    tgl_hari_ini = date.today()
     
-    # Ongkir hanya dihitung jika Draiv (karena nanti dihitung di Frontend via koordinat)
-    ongkir = 0
+    # Cek apakah selisih hari kurang dari 2
+    if (tgl_pesan - tgl_hari_ini).days < 2:
+        raise HTTPException(
+            status_code=400, 
+            detail="Pemesanan harus dilakukan minimal 2 hari sebelum keberangkatan."
+        )
+
+    # 2. Perhitungan Harga
+    harga_dasar = hitung_harga_dasar(data.asal_kab, data.tujuan_kab)
     
-    total_bayar = total_tiket + total_jasa + ongkir
+    # Pembulatan ke kelipatan 500 ke atas
+    ongkir_fix = math.ceil(harga_dasar / 500) * 500
     
-    return {
-        "status": "sukses",
-        "rincian": {
-            "total_tiket": total_tiket,
-            "total_jasa": total_jasa,
-            "ongkir": ongkir,
-            "total_bayar": total_bayar
-        }
-    }
+    return {"ongkir": ongkir_fix}
+
+# Untuk menjalankan lokal: uvicorn main:app --reload
