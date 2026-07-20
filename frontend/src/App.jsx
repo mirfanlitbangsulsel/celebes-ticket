@@ -56,7 +56,7 @@ function App() {
   const [tujuan, setTujuan] = useState({ stasiun: '', kab: '' });
   const [koordinatTujuan, setKoordinatTujuan] = useState(null);
   const [biaya, setBiaya] = useState(0);
-  const waNumber = "628123456789"; // Ganti dengan nomor WhatsApp Anda
+  const waNumber = "6285298344955"; // Ganti dengan nomor WhatsApp Anda
 
   // Stasiun Mandai ditambahkan ke Kabupaten Maros
   const dataStasiun = {
