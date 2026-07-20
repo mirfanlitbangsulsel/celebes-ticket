@@ -18,6 +18,7 @@ class TicketRequest(BaseModel):
     asal_kab: str
     tujuan_kab: str
     jumlah_tiket: int
+    metode: str
 
 def hitung_harga_dasar(asal_kab, tujuan_kab):
     bersebelahan = [
@@ -42,11 +43,12 @@ def hitung_biaya(data: TicketRequest):
             detail="Pemesanan harus dilakukan minimal 2 hari sebelum keberangkatan."
         )
 
-    # Harga dasar rute + penambahan komponen tarif/jasa (misal Rp2.500 per tiket)
-    harga_rute = hitung_harga_dasar(data.asal_kab, data.tujuan_kab)
+    # Hitung harga dasar rute dikalikan jumlah tiket, ditambah komponen tarif/jasa per tiket (misal Rp2.500 * jumlah tiket)
+    harga_rute_satuan = hitung_harga_dasar(data.asal_kab, data.tujuan_kab)
+    total_harga_rute = harga_rute_satuan * data.jumlah_tiket
     tambahan_tarif = data.jumlah_tiket * 2500
     
-    total_mentah = harga_rute + tambahan_tarif
+    total_mentah = total_harga_rute + tambahan_tarif
     
     # Pembulatan ke kelipatan 500 terdekat ke atas
     ongkir_fix = math.ceil(total_mentah / 500) * 500
