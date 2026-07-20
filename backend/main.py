@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, date
-from pydantic import BaseModel
+from pydantic import BaseModel, Optional
 import math
 
 app = FastAPI()
@@ -13,12 +13,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class Coord(BaseModel):
+    lat: float
+    lng: float
+
 class TicketRequest(BaseModel):
     tanggal: str
     asal_kab: str
     tujuan_kab: str
     jumlah_tiket: int
     metode: str
+    koordinat_tujuan: Optional[Coord] = None
+
+# Koordinat Kantor AnNur Travel
+LOKASI_TRAVEL_LAT = -4.410800745861638
+LOKASI_TRAVEL_LNG = 119.62120360634566
+
+def hitung_jarak_km(lat1, lon1, lat2, lon2):
+    # Rumus Haversine untuk menghitung jarak dalam kilometer
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+def hitung_biaya_antar(koordinat):
+    if not koordinat:
+        return 10000 # Default minimal jika metode antar tapi belum klik peta
+    
+    jarak_km = hitung_jarak_km(LOKASI_TRAVEL_LAT, LOKASI_TRAVEL_LNG, koordinat.lat, koordinat.lng)
+    jarak_meter = jarak_km * 1000
+    
+    if jarak_meter <= 2000:
+        return 10000
+    else:
+        kelebihan_meter = jarak_meter - 2000
+        kelipatan_500 = math.ceil(kelebihan_meter / 500)
+        return 10000 + (kelipatan_500 * 2000)
 
 def hitung_harga_dasar(asal_kab, tujuan_kab):
     bersebelahan = [
@@ -43,19 +75,13 @@ def hitung_biaya(data: TicketRequest):
             detail="Pemesanan harus dilakukan minimal 2 hari sebelum keberangkatan."
         )
 
-    # 1. Hitung harga dasar rute dikalikan jumlah tiket
     harga_rute_satuan = hitung_harga_dasar(data.asal_kab, data.tujuan_kab)
     total_harga_rute = harga_rute_satuan * data.jumlah_tiket
-    
-    # 2. Komponen jasa/tarif per tiket (Rp2.500 * jumlah tiket)
     tambahan_tarif = data.jumlah_tiket * 2500
     
-    # 3. Biaya tambahan jika diantarkan ke alamat (misalnya Rp10.000 biaya kurir)
-    biaya_antar = 10000 if data.metode == "Antar" else 0
+    biaya_antar = hitung_biaya_antar(data.koordinat_tujuan) if data.metode == "Antar" else 0
     
     total_mentah = total_harga_rute + tambahan_tarif + biaya_antar
-    
-    # Pembulatan ke kelipatan 500 terdekat ke atas
     ongkir_fix = math.ceil(total_mentah / 500) * 500
     
     return {"ongkir": ongkir_fix}
