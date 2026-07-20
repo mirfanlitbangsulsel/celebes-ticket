@@ -43,12 +43,17 @@ def hitung_biaya(data: TicketRequest):
             detail="Pemesanan harus dilakukan minimal 2 hari sebelum keberangkatan."
         )
 
-    # Hitung harga dasar rute dikalikan jumlah tiket, ditambah komponen tarif/jasa per tiket (misal Rp2.500 * jumlah tiket)
+    # 1. Hitung harga dasar rute dikalikan jumlah tiket
     harga_rute_satuan = hitung_harga_dasar(data.asal_kab, data.tujuan_kab)
     total_harga_rute = harga_rute_satuan * data.jumlah_tiket
+    
+    # 2. Komponen jasa/tarif per tiket (Rp2.500 * jumlah tiket)
     tambahan_tarif = data.jumlah_tiket * 2500
     
-    total_mentah = total_harga_rute + tambahan_tarif
+    # 3. Biaya tambahan jika diantarkan ke alamat (misalnya Rp10.000 biaya kurir)
+    biaya_antar = 10000 if data.metode == "Antar" else 0
+    
+    total_mentah = total_harga_rute + tambahan_tarif + biaya_antar
     
     # Pembulatan ke kelipatan 500 terdekat ke atas
     ongkir_fix = math.ceil(total_mentah / 500) * 500
