@@ -1,11 +1,29 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-geosearch/dist/geosearch.css';
 
-// Koordinat Kantor AnNur Travel yang presisi
+// Koordinat Kantor AnNur Travel
 const LOKASI_TRAVEL = [-4.410800745861638, 119.62120360634566];
+
+// Membuat ikon kustom yang menarik menggunakan DivIcon
+const travelIcon = L.divIcon({
+  className: 'custom-travel-icon',
+  html: `<div style="background-color: #f59e0b; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); color: white; font-weight: bold; font-size: 14px;">🏢</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16]
+});
+
+const tujuanIcon = L.divIcon({
+  className: 'custom-tujuan-icon',
+  html: `<div style="background-color: #10b981; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); color: white; font-weight: bold; font-size: 14px;">📍</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16]
+});
 
 function MapHelper({ setKoordinatTujuan }) {
   const map = useMapEvents({
@@ -19,7 +37,7 @@ function MapHelper({ setKoordinatTujuan }) {
     const searchControl = new GeoSearchControl({
       provider: provider,
       style: 'bar',
-      showMarker: true,
+      showMarker: false, // kita handle marker manual atau biarkan geosearch
       placeholder: 'Cari alamat tujuan pengantaran...',
     });
     map.addControl(searchControl);
@@ -40,8 +58,9 @@ function App() {
   const [biaya, setBiaya] = useState(0);
   const waNumber = "628123456789"; // Ganti dengan nomor WhatsApp Anda
 
+  // Stasiun Mandai ditambahkan ke Kabupaten Maros
   const dataStasiun = {
-    Maros: ["Stasiun Mandai", "Stasiun Maros", "Stasiun Rammang-Rammang"],
+    Maros: ["Stasiun Maros", "Stasiun Rammang-Rammang", "Stasiun Mandai"],
     Pangkep: ["Stasiun Pangkajene", "Stasiun Ma'rang", "Stasiun Labakkang", "Stasiun Mangilu", "Stasiun Mandalle"],
     Barru: ["Stasiun Tanete Rilau", "Stasiun Barru", "Stasiun Mangkoso", "Stasiun Palanro", "Stasiun Garongkong"]
   };
@@ -76,7 +95,8 @@ function App() {
           asal_kab: asal.kab, 
           tujuan_kab: tujuan.kab,
           jumlah_tiket: Number(jumlahTiket),
-          metode: metodeAmbil
+          metode: metodeAmbil,
+          koordinat_tujuan: koordinatTujuan ? { lat: koordinatTujuan.lat, lng: koordinatTujuan.lng } : null
         })
       });
       
@@ -193,11 +213,11 @@ function App() {
             onChange={(e) => setMetodeAmbil(e.target.value)}
           >
             <option value="Travel">Diambil Langsung di Kantor Travel</option>
-            <option value="Antar">Diantarkan ke Alamat (+ Biaya Pengantaran)</option>
+            <option value="Antar">Diantarkan ke Alamat (+ Tarif Pengantaran Jarak)</option>
           </select>
         </div>
 
-        {/* Peta Interaktif & Lokasi Travel */}
+        {/* Peta Interaktif & Lokasi Travel dengan Ikon Kustom */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-200 mb-1">
             {metodeAmbil === 'Antar' ? 'Cari / Tandai Alamat Pengantaran di Peta:' : 'Lokasi Kantor AnNur Travel:'}
@@ -206,12 +226,16 @@ function App() {
             <MapContainer center={LOKASI_TRAVEL} zoom={13} style={{ height: '100%', width: '100%' }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               
-              <Marker position={LOKASI_TRAVEL}>
-                <Popup>Kantor AnNur Travel</Popup>
+              <Marker position={LOKASI_TRAVEL} icon={travelIcon}>
+                <Popup><b>Kantor AnNur Travel</b></Popup>
               </Marker>
 
               {metodeAmbil === 'Antar' && <MapHelper setKoordinatTujuan={setKoordinatTujuan} />}
-              {metodeAmbil === 'Antar' && koordinatTujuan && <Marker position={koordinatTujuan} />}
+              {metodeAmbil === 'Antar' && koordinatTujuan && (
+                <Marker position={koordinatTujuan} icon={tujuanIcon}>
+                  <Popup><b>Lokasi Pengantaran Anda</b></Popup>
+                </Marker>
+              )}
             </MapContainer>
           </div>
           {metodeAmbil === 'Antar' && koordinatTujuan && (
