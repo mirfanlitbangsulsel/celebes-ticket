@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-geosearch/dist/geosearch.css';
+
+// Koordinat Kantor AnNur Travel (Contoh titik di Makassar/Sulawesi)
+const LOKASI_TRAVEL = [-5.147, 119.432];
 
 // Komponen untuk menangani klik pada peta & Search Lokasi
 function MapHelper({ setKoordinatTujuan }) {
@@ -18,7 +21,7 @@ function MapHelper({ setKoordinatTujuan }) {
       provider: provider,
       style: 'bar',
       showMarker: true,
-      placeholder: 'Cari alamat tujuan...',
+      placeholder: 'Cari alamat tujuan pengantaran...',
     });
     map.addControl(searchControl);
     return () => map.removeControl(searchControl);
@@ -29,19 +32,40 @@ function MapHelper({ setKoordinatTujuan }) {
 
 function App() {
   const [tanggal, setTanggal] = useState('');
-  const [namaPenumpang, setNamaPenumpang] = useState('');
   const [jumlahTiket, setJumlahTiket] = useState(1);
+  const [daftarNama, setDaftarNama] = useState(['']);
+  const [metodeAmbil, setMetodeAmbil] = useState('Travel');
   const [asal, setAsal] = useState({ stasiun: '', kab: '' });
   const [tujuan, setTujuan] = useState({ stasiun: '', kab: '' });
   const [koordinatTujuan, setKoordinatTujuan] = useState(null);
   const [biaya, setBiaya] = useState(0);
   const waNumber = "628123456789"; // Ganti dengan nomor WhatsApp Anda
 
-  // Data stasiun dengan perbaikan (Mandalle masuk Pangkep)
   const dataStasiun = {
     Maros: ["Stasiun Maros", "Stasiun Rammang-Rammang"],
     Pangkep: ["Stasiun Pangkajene", "Stasiun Ma'rang", "Stasiun Labakkang", "Stasiun Mangilu", "Stasiun Mandalle"],
     Barru: ["Stasiun Tanete Rilau", "Stasiun Barru", "Stasiun Mangkoso", "Stasiun Palanro", "Stasiun Garongkong"]
+  };
+
+  // Fungsi untuk mengubah jumlah tiket dan menyesuaikan input nama
+  const handleJumlahTiketChange = (val) => {
+    const jml = Math.max(1, parseInt(val) || 1);
+    setJumlahTiket(jml);
+    setDaftarNama(prev => {
+      const arr = [...prev];
+      if (jml > arr.length) {
+        while (arr.length < jml) arr.push('');
+      } else {
+        arr.length = jml;
+      }
+      return arr;
+    });
+  };
+
+  const handleNamaChange = (index, value) => {
+    const arr = [...daftarNama];
+    arr[index] = value;
+    setDaftarNama(arr);
   };
 
   const handleHitung = async () => {
@@ -53,7 +77,8 @@ function App() {
           tanggal, 
           asal_kab: asal.kab, 
           tujuan_kab: tujuan.kab,
-          jumlah_tiket: Number(jumlahTiket)
+          jumlah_tiket: Number(jumlahTiket),
+          metode: metodeAmbil
         })
       });
       
@@ -71,12 +96,14 @@ function App() {
   };
 
   const kirimWA = () => {
+    const listPenumpangFormatted = daftarNama.map((n, i) => `  ${i + 1}. ${n}`).join('\n');
     const pesan = `Halo, saya ingin memesan tiket AnNur Travel.\n` +
-                  `Nama: ${namaPenumpang}\n` +
+                  `Daftar Penumpang (Sesuai KTP/KK):\n${listPenumpangFormatted}\n` +
                   `Tanggal: ${tanggal}\n` +
                   `Jumlah Tiket: ${jumlahTiket} Orang\n` +
                   `Dari: ${asal.stasiun} (${asal.kab})\n` +
                   `Ke: ${tujuan.stasiun} (${tujuan.kab})\n` +
+                  `Pengambilan Tiket: ${metodeAmbil === 'Travel' ? 'Diambil di Travel' : 'Diantarkan ke Alamat'}\n` +
                   `Total Biaya: Rp ${biaya.toLocaleString()}`;
     window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(pesan)}`);
   };
@@ -85,7 +112,6 @@ function App() {
     <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-8">
       <div className="max-w-xl mx-auto bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
         
-        {/* Header dengan teks terang agar terlihat jelas */}
         <h1 className="text-2xl font-bold text-center text-amber-400 mb-1">Jastip Tiket AnNur Travel</h1>
         <p className="text-sm text-center text-slate-400 mb-6">Pemesanan Tiket Kereta & Pengantaran</p>
         
@@ -99,18 +125,6 @@ function App() {
           />
         </div>
 
-        {/* Nama Penumpang */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-slate-200 mb-1">Nama Penumpang:</label>
-          <input 
-            type="text" 
-            placeholder="Masukkan nama lengkap"
-            className="w-full bg-slate-700 border border-slate-600 rounded p-2 text-white" 
-            value={namaPenumpang}
-            onChange={(e) => setNamaPenumpang(e.target.value)} 
-          />
-        </div>
-
         {/* Jumlah Tiket */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-200 mb-1">Jumlah Tiket:</label>
@@ -119,8 +133,23 @@ function App() {
             min="1"
             className="w-full bg-slate-700 border border-slate-600 rounded p-2 text-white" 
             value={jumlahTiket}
-            onChange={(e) => setJumlahTiket(e.target.value)} 
+            onChange={(e) => handleJumlahTiketChange(e.target.value)} 
           />
+        </div>
+
+        {/* Input Nama Penumpang Dinamis Sesuai KTP/KK */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-slate-200 mb-1">Nama Penumpang (Sesuai KTP/KK):</label>
+          {daftarNama.map((nama, idx) => (
+            <input 
+              key={idx}
+              type="text" 
+              placeholder={`Nama Penumpang ${idx + 1} (Sesuai KTP/KK)`}
+              className="w-full bg-slate-700 border border-slate-600 rounded p-2 text-white mb-2" 
+              value={nama}
+              onChange={(e) => handleNamaChange(idx, e.target.value)} 
+            />
+          ))}
         </div>
 
         {/* Stasiun Asal */}
@@ -157,18 +186,40 @@ function App() {
           </select>
         </div>
 
-        {/* Peta Interaktif & Search */}
+        {/* Pilihan Pengambilan Tiket */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-slate-200 mb-1">Tandai Lokasi / Cari Alamat di Peta:</label>
+          <label className="block text-sm font-medium text-slate-200 mb-1">Metode Pengambilan Tiket:</label>
+          <select 
+            className="w-full bg-slate-700 border border-slate-600 rounded p-2 text-white"
+            value={metodeAmbil}
+            onChange={(e) => setMetodeAmbil(e.target.value)}
+          >
+            <option value="Travel">Diambil Langsung di Kantor Travel</option>
+            <option value="Antar">Diantarkan ke Alamat</option>
+          </select>
+        </div>
+
+        {/* Peta Interaktif & Lokasi Travel (Hanya muncul jika opsi Antar dipilih, atau tampilkan sebagai referensi) */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-slate-200 mb-1">
+            {metodeAmbil === 'Antar' ? 'Cari / Tandai Alamat Pengantaran di Peta:' : 'Lokasi Kantor AnNur Travel:'}
+          </label>
           <div className="h-64 w-full rounded overflow-hidden border border-slate-600">
-            <MapContainer center={[-4.5, 119.5]} zoom={9} style={{ height: '100%', width: '100%' }}>
+            <MapContainer center={LOKASI_TRAVEL} zoom={13} style={{ height: '100%', width: '100%' }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <MapHelper setKoordinatTujuan={setKoordinatTujuan} />
-              {koordinatTujuan && <Marker position={koordinatTujuan} />}
+              
+              {/* Marker Lokasi Travel */}
+              <Marker position={LOKASI_TRAVEL}>
+                <Popup>Kantor AnNur Travel</Popup>
+              </Marker>
+
+              {/* Marker Tambahan untuk Tujuan Pengantaran */}
+              {metodeAmbil === 'Antar' && <MapHelper setKoordinatTujuan={setKoordinatTujuan} />}
+              {metodeAmbil === 'Antar' && koordinatTujuan && <Marker position={koordinatTujuan} />}
             </MapContainer>
           </div>
-          {koordinatTujuan && (
-            <p className="text-xs text-emerald-400 mt-1">✓ Titik koordinat tujuan terpilih di peta.</p>
+          {metodeAmbil === 'Antar' && koordinatTujuan && (
+            <p className="text-xs text-emerald-400 mt-1">✓ Titik koordinat pengantaran berhasil dipilih.</p>
           )}
         </div>
 
@@ -183,7 +234,7 @@ function App() {
         {/* Hasil Perhitungan & Tombol WA */}
         {biaya > 0 && (
           <div className="mt-6 p-4 bg-slate-700 rounded-lg border border-slate-600 text-center">
-            <p className="text-sm text-slate-300">Total Biaya (Termasuk Tarif & Kelipatan 500):</p>
+            <p className="text-sm text-slate-300">Total Biaya:</p>
             <p className="text-2xl font-bold text-emerald-400 my-2">Rp {biaya.toLocaleString()}</p>
             <button 
               onClick={kirimWA} 
