@@ -41,7 +41,7 @@ function App() {
   const waNumber = "628123456789"; // Ganti dengan nomor WhatsApp Anda
 
   const dataStasiun = {
-    Maros: ["Stasiun Maros", "Stasiun Rammang-Rammang"],
+    Maros: ["Stasiun Mandai", "Stasiun Maros", "Stasiun Rammang-Rammang"],
     Pangkep: ["Stasiun Pangkajene", "Stasiun Ma'rang", "Stasiun Labakkang", "Stasiun Mangilu", "Stasiun Mandalle"],
     Barru: ["Stasiun Tanete Rilau", "Stasiun Barru", "Stasiun Mangkoso", "Stasiun Palanro", "Stasiun Garongkong"]
   };
