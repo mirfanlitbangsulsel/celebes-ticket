@@ -4,10 +4,9 @@ import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-geosearch/dist/geosearch.css';
 
-// Koordinat Kantor AnNur Travel (Contoh titik di Makassar/Sulawesi)
-const LOKASI_TRAVEL = [-5.147, 119.432];
+// Koordinat Kantor AnNur Travel yang baru
+const LOKASI_TRAVEL = [-4.410800745861638, 119.62120360634566];
 
-// Komponen untuk menangani klik pada peta & Search Lokasi
 function MapHelper({ setKoordinatTujuan }) {
   const map = useMapEvents({
     click(e) {
@@ -39,7 +38,7 @@ function App() {
   const [tujuan, setTujuan] = useState({ stasiun: '', kab: '' });
   const [koordinatTujuan, setKoordinatTujuan] = useState(null);
   const [biaya, setBiaya] = useState(0);
-  const waNumber = "628123456789"; // Ganti dengan nomor WhatsApp Anda
+  const waNumber = "6285298344955"; // Ganti dengan nomor WhatsApp Anda
 
   const dataStasiun = {
     Maros: ["Stasiun Maros", "Stasiun Rammang-Rammang"],
@@ -47,7 +46,6 @@ function App() {
     Barru: ["Stasiun Tanete Rilau", "Stasiun Barru", "Stasiun Mangkoso", "Stasiun Palanro", "Stasiun Garongkong"]
   };
 
-  // Fungsi untuk mengubah jumlah tiket dan menyesuaikan input nama
   const handleJumlahTiketChange = (val) => {
     const jml = Math.max(1, parseInt(val) || 1);
     setJumlahTiket(jml);
@@ -137,7 +135,7 @@ function App() {
           />
         </div>
 
-        {/* Input Nama Penumpang Dinamis Sesuai KTP/KK */}
+        {/* Input Nama Penumpang Dinamis */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-200 mb-1">Nama Penumpang (Sesuai KTP/KK):</label>
           {daftarNama.map((nama, idx) => (
@@ -186,7 +184,7 @@ function App() {
           </select>
         </div>
 
-        {/* Pilihan Pengambilan Tiket */}
+        {/* Metode Pengambilan Tiket */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-200 mb-1">Metode Pengambilan Tiket:</label>
           <select 
@@ -199,7 +197,7 @@ function App() {
           </select>
         </div>
 
-        {/* Peta Interaktif & Lokasi Travel (Hanya muncul jika opsi Antar dipilih, atau tampilkan sebagai referensi) */}
+        {/* Peta Interaktif & Lokasi Travel */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-slate-200 mb-1">
             {metodeAmbil === 'Antar' ? 'Cari / Tandai Alamat Pengantaran di Peta:' : 'Lokasi Kantor AnNur Travel:'}
@@ -208,12 +206,10 @@ function App() {
             <MapContainer center={LOKASI_TRAVEL} zoom={13} style={{ height: '100%', width: '100%' }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               
-              {/* Marker Lokasi Travel */}
               <Marker position={LOKASI_TRAVEL}>
                 <Popup>Kantor AnNur Travel</Popup>
               </Marker>
 
-              {/* Marker Tambahan untuk Tujuan Pengantaran */}
               {metodeAmbil === 'Antar' && <MapHelper setKoordinatTujuan={setKoordinatTujuan} />}
               {metodeAmbil === 'Antar' && koordinatTujuan && <Marker position={koordinatTujuan} />}
             </MapContainer>
