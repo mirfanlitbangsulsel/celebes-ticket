@@ -4,7 +4,7 @@ import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-geosearch/dist/geosearch.css';
 
-// Koordinat Kantor AnNur Travel yang baru
+// Koordinat Kantor AnNur Travel yang presisi
 const LOKASI_TRAVEL = [-4.410800745861638, 119.62120360634566];
 
 function MapHelper({ setKoordinatTujuan }) {
@@ -38,7 +38,7 @@ function App() {
   const [tujuan, setTujuan] = useState({ stasiun: '', kab: '' });
   const [koordinatTujuan, setKoordinatTujuan] = useState(null);
   const [biaya, setBiaya] = useState(0);
-  const waNumber = "6285298344955"; // Ganti dengan nomor WhatsApp Anda
+  const waNumber = "628123456789"; // Ganti dengan nomor WhatsApp Anda
 
   const dataStasiun = {
     Maros: ["Stasiun Maros", "Stasiun Rammang-Rammang"],
@@ -193,7 +193,7 @@ function App() {
             onChange={(e) => setMetodeAmbil(e.target.value)}
           >
             <option value="Travel">Diambil Langsung di Kantor Travel</option>
-            <option value="Antar">Diantarkan ke Alamat</option>
+            <option value="Antar">Diantarkan ke Alamat (+ Biaya Pengantaran)</option>
           </select>
         </div>
 
